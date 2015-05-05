@@ -40,6 +40,19 @@ if(HAVE_DLFCN_H)
     list(APPEND volk_libraries ${CMAKE_DL_LIBS})
 endif()
 
+# REQUIRED FOR ANDROID BUILDS
+if(ANDROID)
+  list(APPEND volk_libraries m log)
+endif(ANDROID)
+
+########################################################################
+# Android Support
+########################################################################
+if(ANDROID)
+  list(APPEND volk_libraries m log)
+endif(ANDROID)
+
+
 ########################################################################
 # Setup the compiler name
 ########################################################################
@@ -57,8 +70,8 @@ endif()
 ########################################################################
 # Special clang flag so flag checks can fail
 ########################################################################
+include(CheckCXXCompilerFlag)
 if(COMPILER_NAME MATCHES "GNU")
-    include(CheckCXXCompilerFlag)
     CHECK_CXX_COMPILER_FLAG("-Werror=unused-command-line-argument" HAVE_WERROR_UNUSED_CMD_LINE_ARG)
     if(HAVE_WERROR_UNUSED_CMD_LINE_ARG)
         set(VOLK_FLAG_CHECK_FLAGS "-Werror=unused-command-line-argument")
@@ -99,24 +112,18 @@ macro(check_arch arch_name)
     set(flags ${ARGN})
     set(have_${arch_name} TRUE)
     foreach(flag ${flags})
-        if ( (${COMPILER_NAME} STREQUAL "MSVC") AND (${flag} STREQUAL "/arch:SSE2" OR ${flag} STREQUAL "/arch:SSE" ))
-            # SSE/SSE2 is supported in MSVC since VS 2005 but flag not available when compiling 64-bit so do not check
-        else()
-            include(CheckCXXCompilerFlag)
-            set(have_flag have${flag})
-            #make the have_flag have nice alphanum chars (just for looks/not necessary)
-            execute_process(
-                COMMAND ${PYTHON_EXECUTABLE} -c "import re; print(re.sub('\\W', '_', '${have_flag}'))"
-                OUTPUT_VARIABLE have_flag OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-            if(VOLK_FLAG_CHECK_FLAGS)
-                set(CMAKE_REQUIRED_FLAGS ${VOLK_FLAG_CHECK_FLAGS})
-            endif()
-            CHECK_CXX_COMPILER_FLAG(${flag} ${have_flag})
-            unset(CMAKE_REQUIRED_FLAGS)
-            if (NOT ${have_flag})
-                set(have_${arch_name} FALSE)
-            endif()
+        set(have_flag have${flag})
+        execute_process( #make the have_flag have nice alphanum chars (just for looks/not necessary)
+            COMMAND ${PYTHON_EXECUTABLE} -c "import re; print(re.sub('\\W', '_', '${have_flag}'))"
+            OUTPUT_VARIABLE have_flag OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(VOLK_FLAG_CHECK_FLAGS)
+            set(CMAKE_REQUIRED_FLAGS ${VOLK_FLAG_CHECK_FLAGS})
+        endif()
+        CHECK_CXX_COMPILER_FLAG(${flag} ${have_flag})
+        unset(CMAKE_REQUIRED_FLAGS)
+        if (NOT ${have_flag})
+            set(have_${arch_name} FALSE)
         endif()
     endforeach()
     if (have_${arch_name})
@@ -418,7 +425,7 @@ if(${CMAKE_VERSION} VERSION_GREATER "2.8.9")
       message(STATUS "---- Adding ASM files") # we always use ATT syntax
       message(STATUS "-- Detected neon architecture; enabling ASM")
       # setup architecture specific assembler flags
-      set(ARCH_ASM_FLAGS "-mfpu=neon -g")
+      set(ARCH_ASM_FLAGS "-march=armv7-a -mfpu=neon -g")
       # then add the files
       include_directories(${CMAKE_SOURCE_DIR}/kernels/volk/asm/neon)
       file(GLOB asm_files ${CMAKE_SOURCE_DIR}/kernels/volk/asm/neon/*.s)

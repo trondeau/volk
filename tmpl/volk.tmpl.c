@@ -32,6 +32,10 @@
 static size_t __alignment = 0;
 static intptr_t __alignment_mask = 0;
 
+#include <android/log.h>
+#define ALOG(x) __android_log_print(ANDROID_LOG_VERBOSE, "VOLK", x);
+
+
 struct volk_machine *get_machine(void)
 {
   extern struct volk_machine *volk_machines[];
@@ -53,7 +57,12 @@ struct volk_machine *get_machine(void)
       }
     }
     machine = max_machine;
-    printf("Using Volk machine: %s\n", machine->name);
+    //printf("Using Volk machine: %s\n", machine->name);
+
+    char msg[256];
+    sprintf(msg, "Using Volk machine: %s", machine->name);
+    ALOG(msg);
+
     __alignment = machine->alignment;
     __alignment_mask = (intptr_t)(__alignment-1);
     return machine;
@@ -157,6 +166,12 @@ static inline void __init_$(kern.name)(void)
 
     assert($(kern.name)_a);
     assert($(kern.name)_u);
+
+    char msg[256];
+    sprintf(msg, "$(kern.name)_a --> %s", impl_names[index_a]);
+    ALOG(msg);
+    sprintf(msg, "$(kern.name)_u --> %s", impl_names[index_u]);
+    ALOG(msg);
 
     $(kern.name) = &__$(kern.name)_d;
 }

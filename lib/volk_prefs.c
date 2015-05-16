@@ -7,6 +7,10 @@ void volk_get_config_path(char *path)
 {
     if (!path) return;
     const char *suffix = "/.volk/volk_config";
+#ifdef ANDROID
+    strncpy(path, "/sdcard", 7);
+    strncat(path, suffix, 18);
+#else
     char *home = NULL;
     if (home == NULL) home = getenv("HOME");
     if (home == NULL) home = getenv("APPDATA");
@@ -16,6 +20,7 @@ void volk_get_config_path(char *path)
     }
     strncpy(path, home, 512);
     strcat(path, suffix);
+#endif
 }
 
 size_t volk_load_preferences(volk_arch_pref_t **prefs_res)
@@ -28,6 +33,7 @@ size_t volk_load_preferences(volk_arch_pref_t **prefs_res)
     //get the config path
     volk_get_config_path(path);
     if (!path[0]) return n_arch_prefs; //no prefs found
+
     config_file = fopen(path, "r");
     if(!config_file) return n_arch_prefs; //no prefs found
 

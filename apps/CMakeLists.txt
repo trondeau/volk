@@ -22,6 +22,11 @@ if(MSVC)
     include_directories(${CMAKE_SOURCE_DIR}/cmake/msvc)
 endif(MSVC)
 
+# If Android, don't build the applications
+if(ANDROID)
+  return()
+endif(ANDROID)
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}

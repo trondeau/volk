@@ -22,11 +22,6 @@ if(MSVC)
     include_directories(${CMAKE_SOURCE_DIR}/cmake/msvc)
 endif(MSVC)
 
-# If Android, don't build the applications
-if(ANDROID)
-  return()
-endif(ANDROID)
-
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
@@ -37,16 +32,22 @@ include_directories(
     ${Boost_INCLUDE_DIRS}
 )
 
+if( ANDROID )
+set(CMAKE_CXX_FLAGS "-fPIE ${CMAKE_CXX_FLAGS}")
+    set(LINK_LLOG_ANDROID "-fPIE -pie -Wl,-Bdynamic -L{ANDROID_SYSROOT}/usr/lib -llog")
+else()
+    set(LINK_LLOG_ANDROID "")
+endif()
+
 # MAKE volk_profile
 add_executable(volk_profile
     ${CMAKE_CURRENT_SOURCE_DIR}/volk_profile.cc
     ${CMAKE_SOURCE_DIR}/lib/qa_utils.cc
 )
 
-
 if(ENABLE_STATIC_LIBS)
     target_link_libraries(volk_profile volk_static ${Boost_LIBRARIES})
-    set_target_properties(volk_profile PROPERTIES LINK_FLAGS "-static")
+    set_target_properties(volk_profile PROPERTIES LINK_FLAGS "${LINK_LLOG_ANDROID} -static")
 else()
     target_link_libraries(volk_profile volk ${Boost_LIBRARIES})
 endif()
@@ -62,7 +63,7 @@ add_executable(volk-config-info volk-config-info.cc)
 
 if(ENABLE_STATIC_LIBS)
     target_link_libraries(volk-config-info volk_static ${Boost_LIBRARIES})
-    set_target_properties(volk-config-info PROPERTIES LINK_FLAGS "-static")
+    set_target_properties(volk-config-info PROPERTIES LINK_FLAGS "${LINK_LLOG_ANDROID} -static")
 else()
     target_link_libraries(volk-config-info volk ${Boost_LIBRARIES})
 endif()
